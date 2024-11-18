@@ -1,0 +1,50 @@
+import numpy as np
+from scipy.integrate import quad
+from scipy.linalg import eigh
+
+# Define parameters
+omega = 1.0       # Frequency of the harmonic oscillator
+L = 5.0           # Size of the box
+N = 10            # Number of basis functions to use
+tolerance = 1e-4  # Accuracy for eigenvalues
+
+# Particle in a box eigenfunctions
+def phi_n(n, x, L):
+    return np.sqrt(2 / L) * np.sin(n * np.pi * x / L)
+
+# Potential energy of the harmonic oscillator
+def V(x, omega):
+    return 0.5 * omega**2 * x**2
+
+# Calculate the matrix elements H_ij
+def H_ij(i, j, L, omega):
+    n, m = i + 1, j + 1  # Convert to 1-based index
+    if i == j:
+        # Kinetic energy part
+        T_ij = (n * np.pi / L)**2 / 2
+    else:
+        T_ij = 0.0
+    
+    # Potential energy part
+    V_ij_integral, _ = quad(lambda x: phi_n(n, x, L) * V(x, omega) * phi_n(m, x, L), 0, L)
+    return T_ij + V_ij_integral
+
+# Construct the Hamiltonian matrix
+H = np.zeros((N, N))
+for i in range(N):
+    for j in range(N):
+        H[i, j] = H_ij(i, j, L, omega)
+
+# Solve the eigenvalue problem
+eigenvalues, eigenvectors = eigh(H)
+
+# Display the two lowest eigenvalues
+print("The two lowest eigenvalues are:")
+for i in range(2):
+    print(f"Eigenvalue {i+1}: {eigenvalues[i]:.6f} a.u.")
+
+# Calculate exact values for comparison
+exact_eigenvalues = [(n + 1.5) * omega for n in range(2)]
+print("\nExact eigenvalues for comparison:")
+for i in range(2):
+    print(f"Exact Eigenvalue {i+1}: {exact_eigenvalues[i]:.6f} a.u.")
